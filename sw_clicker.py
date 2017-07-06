@@ -6,11 +6,11 @@ import requests
 import argparse
 import logging
 import time
+import pickle
 
 import shutil
 from PIL import Image
 from shutil import copyfile
-from subprocess import Popen
 
 try:
     print("***Чтение файла авторизации.***")
@@ -43,11 +43,14 @@ except ImportError:
     
 view_only_mode = False
 
-VER = 175
+VER = 177
 # URL_API = "http://192.168.169.145:30001/api/UploadFile4Recognition"
-URL_SRV = "http://217.71.231.9:30001"
+# URL_SRV = "http://217.71.231.9:30001"
+URL_SRV = "http://192.168.169.145:30001"
 URL_API = URL_SRV + "/api/UploadFile4Recognition"
 URL_UPD = URL_SRV + "/chkver"
+STAT_UPD = URL_SRV + "/stat"
+
 IMAGE_TYPE = "screenshot"
 IM_PATH = "screenshot.jpg"
 supportFlag = True
@@ -55,11 +58,19 @@ uaddr = "unknown"
 uname = "unknown"
 img_meta = []
 
+new_start_date = None
+new_start_flag = None
+
 logger = logging.getLogger('sw')
 ch = logging.StreamHandler()
 logger.addHandler(ch)
 logger.setLevel(logging.DEBUG)
 
+class Stat(object):
+    def __init__(self, run_id, name, value):
+        self.run_id = run_id
+        self.name = name
+        self.value = value
 
 def get_image_from_path(image_path):
     # Чтение изображения
@@ -129,8 +140,39 @@ def do_mouse_click(com):
         return True
 
 
+def calc_and_write_stat(run_id):
+    new_value = 0
+    try:
+        with open('stat.pkl', 'rb') as input:
+            stat_data = pickle.load(input)
+            _run_id = stat_data.run_id
+            _name = stat_data.name
+            _value = stat_data.value
+
+            _now = datetime.now()
+            print(_value, _now, run_id, (_now - run_id).seconds, new_value)
+            new_value = (_value + (datetime.now() - run_id).seconds) / 2
+
+            with open('stat.pkl', 'wb') as output:
+                stat = Stat(run_id, 'start-boss', new_value)
+                pickle.dump(stat, output, pickle.HIGHEST_PROTOCOL)
+            print("stat %s --> %s" % (_value, new_value))
+
+    except IOError:
+        with open('stat.pkl', 'wb') as output:
+            stat = Stat(run_id, 'start-boss', new_value)
+            pickle.dump(stat, output, pickle.HIGHEST_PROTOCOL)
+        print("stat init %s" % new_value)
+
+    return int(new_value)
+
+
+def print_waiting(step):
+    print("\r***ОЖИДАНИЕ " + str(step) + " СЕКУНД***", end="")
+
+
 def run():
-    global supportFlag
+    global supportFlag, long_stage_timeout, new_start_date, new_start_flag
     try:
         os.remove("screenshot.jpg")
     except IOError:
@@ -165,24 +207,62 @@ def run():
         result = "failed upload_to_web"
     
     if view_only_mode:
-        return
-    
+        return callback_id
+
+    if not new_start_date:
+        new_start_date = datetime.now()
+
     if result == "Error!!":
         pass
     elif result == "01start":
+        new_start_date = datetime.now()
+        new_start_flag = None
         os.system("PCLinkClk.exe 0 0 85 70")
     elif (result == "02boot") | (result == "03st"):
-        logger.debug("***ОЖИДАНИЕ %d СЕКУНД***" % 15)
-        time.sleep(long_stage_timeout)
+        print(long_stage_timeout, new_start_date, new_start_flag)
+        if not new_start_flag:
+            if long_stage_timeout > 30 :
+                long_stage_timeout -= 30
+            logger.debug("***ОЖИДАНИЕ %d СЕКУНД***" % long_stage_timeout)
+            if long_stage_timeout > 120:
+                i = long_stage_timeout / 2
+                if new_start_flag == 10:
+                    new_start_flag = 1
+                else:
+                    new_start_flag = 10
+
+            else:
+                i = long_stage_timeout
+                new_start_flag = 1
+            while i > 0:
+                print_waiting(i)
+                time.sleep(1)
+                i -= 1
+            print("\n")
+        else:
+            logger.debug("***ПОВТОРНЫЙ ЗАПРОС - ОЖИДАНИЕ %d СЕКУНД***" % 10)
+            i = 10
+            while i > 0:
+                print_waiting(i)
+                time.sleep(1)
+                i -= 1
+            print("\n")
         pass
     elif result == "07boss1":
-        logger.debug("***ОЖИДАНИЕ %d СЕКУНД***" % 10)
-        time.sleep(boss_timeout)
+        logger.debug("***ОЖИДАНИЕ %d СЕКУНД***" % boss_timeout)
+        i = boss_timeout
+        while i > 0:
+            print_waiting(i)
+            time.sleep(1)
+            i -= 1
+        print("\n")
         pass
     elif result == "11victory1":
+        long_stage_timeout = calc_and_write_stat(new_start_date)
         os.system("PCLinkClk.exe")
         time.sleep(0.5)
         os.system("PCLinkClk.exe")
+        new_start_date = None
     elif result == "11revive":
         os.system("PCLinkClk.exe 0 0 65 65")
     elif result == "12victory2":
@@ -196,34 +276,37 @@ def run():
         if sell_all_runes == 1:
             logger.debug("Продажа всех рун ВКЛ")
             if not do_mouse_click("PCLinkClk.exe 0 0 37 78"):
-                return
+                return callback_id
         else:
             logger.debug("Продажа всех рун НЕ вкл")
             if not do_mouse_click("PCLinkClk.exe 0 0 63 78"):
-                return
+                return callback_id
     elif result == "15replay":
-        os.system("PCLinkClk.exe 0 0 30 50")
+        os.system("PCLinkClk.exe 0 0 45 50")
+        new_start_date = None
     elif result == "14sell":
         if not do_mouse_click("PCLinkClk.exe 0 0 37 60"):
-            return
+            return callback_id
     elif (result == "16no energy") | (result == "18buy energy"):
         if not do_mouse_click("PCLinkClk.exe 0 0 40 60"):
-            return
+            return callback_id
     elif result == "17click energy":
         if supportFlag:
             pass
             if not do_mouse_click("PCLinkClk.exe 0 0 30 50"):
-                return
+                return callback_id
         else:
             if not do_mouse_click("PCLinkClk.exe 0 0 83 17"):
-                return
+                return callback_id
         supportFlag = not supportFlag
     elif result == "19buy energy ok":
         if not do_mouse_click("PCLinkClk.exe 0 0 50 60"):
-            return
+            return callback_id
     elif result == "20energy full":
         if not do_mouse_click("PCLinkClk.exe 0 0 83 17"):
-            return
+            return callback_id
+
+    return callback_id
 
 
 def script_update(path):
@@ -278,13 +361,32 @@ if __name__ == "__main__":
         default=1,
         help="Периодичность отправки, секунд"
     )
+
     args = parser.parse_args()
-    uaddr = requests.get('https://api.ipify.org').text
+    try:
+        uaddr = requests.get('https://api.ipify.org').text
+    except Exception as e:
+        print(e)
     uname = key
 
     check_new_version()
 
+
     while True:
-        run()
+        startdate = datetime.now()
+
+        # Main Function
+        callback_id = run()
+
+        enddate = datetime.now()
+        data = {
+            'client_startdate': startdate,
+            'client_enddate': enddate,
+            'client_version': VER,
+            'callback_id': callback_id
+        }
+
+        result = requests.post(url=STAT_UPD, data=data)
+
         logger.debug("***ЗАДЕРЖКА ОТПРАВКИ %d СЕКУНД***" % args.timeout)
         time.sleep(args.timeout)
