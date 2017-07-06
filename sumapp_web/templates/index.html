@@ -1,0 +1,292 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Summoners War - user support tool</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="static/css/bootstrap.min.css" >
+    <link rel="stylesheet" href="static/css/style.css">
+    <link rel="stylesheet" href="static/css/font-awesome.min.css">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+
+    <header>
+		<div class="container">
+			<div  class="row">
+				<div class="col-sm-3 logo-right">
+					<img src="static/img/unicorn.gif" alt="Логотип" class="img-responsive">
+				</div>
+				<div class="col-sm-6 description text-center">
+					<H3>Summoners war supporter</H3>
+                    <H5>Программа-помощник в игре</H5>
+				</div>
+				<div class="col-sm-3 logo-left">
+				<img src="static/img/occult_girl.gif" alt="Логотип" class="img-responsive">
+				</div>
+			</div>
+		</div>
+    </header>
+	
+	<nav>
+		<div class="container">
+			<div class="row">
+				<ul class="list-inline">
+                    <li>
+						<a href="#main">Главная</a>
+					</li>
+					<li>
+						<a href="#about">О программе</a>
+					</li>
+					<li>
+						<a href="#install">Установка</a>
+					</li>
+					<li>
+						<a href="#setup">Настройка</a>
+					</li>
+					<li>
+						<a href="#contacts">Контакты</a>
+					</li>
+				</ul>
+			</div>
+		</div>
+	</nav>
+
+    <section id="main">
+		<div class="container">
+			<div class="row main-header">
+				<h1><span>Сколько времени вы тратите на игру?</span> <br>
+                <span>хотите сэкономить время?</span> <br>
+                <span>У вас есть такая возможность!</span></h1>
+			</div>
+            <div class="row ">
+				<h3><span>Установите и настройте программу под себя... </span> <br>
+                    <span class="hide">Она освободит ваше время и поможет прокачать монстров быстрее!</span></h3>
+			</div>
+		</div>
+	</section>
+
+    <section id="about">
+		<div class="container">
+			<div class="row section_header">
+				<h2>О программе</h2>
+			</div>
+            <div class="col-sm-12 about-text">
+                <p class="text">
+                    Данная программа представляет собой кликер, который работает по
+                специальному алгоритму с использованием искусственного интеллекта (ИИ). <br>
+                    Программа позволяет проходить различные инстансы в автоматическом режиме без вашего участия.
+                </p>
+            </div>
+            <div class="row">
+				<h3>Требования</h3>
+			</div>
+            <div class="col-sm-12">
+                <p class="text btext">Для использования программы:<br>
+                На вашем ПК должно быть установлено следующее ПО:</p>
+                <ul>
+                    <li><a href="https://www.asus.com/support/faq/1007320">ASUS PC Link</a></li>
+                    <li><a href="https://www.python.org/downloads/">Python 3</a></li>
+                </ul>
+                <p class="text btext">Помимо этого:</p>
+                <ul>
+                    <li>На android-устройстве также должно стоять приложение ASUS PC Link.</li>
+                    <li>На компьютере и android-устройстве должен быть выход в интернет.</li>
+                    <li>Вы должны следовать правилам предоставления сервиса. Правила можно прочесть в главе "установка".</li>
+                </ul>
+            </div>
+		</div>
+	</section>
+
+    <section id="install">
+		<div class="container">
+			<div class="row section_header">
+				<h2>Установка</h2>
+			</div>
+            <div class="warning">Перед установкой вы должны прочесть и подтвердить согласие с правилами предоставления сервиса. <br>
+                Если вы не согласны - не скачивайте, не устанавливайте и не используйте программу!</div>
+                <div class="row">
+                  <div class="col-sm-4"></div>
+                  <div class="col-sm-4"><button data-toggle="modal" id="read_agreement" href="#read_agreement_modal">Прочесть соглашение</button></div>
+                  <div class="col-sm-4"></div>
+                </div>
+            <div>
+                <h3>Порядок установки:</h3>
+                <ol>
+                    <li>Установите <a href="https://www.asus.com/support/faq/1007320">ASUS PC Link</a>
+                на ПК и android-устройстве и <a href="https://www.python.org/downloads/">Python 3</a> на ПК.
+                Обратите внимание, при установке Python 3 желательно добавить путь в PATH
+                (данный вариант предлагается во время установки). </li>
+                    <li>Проверьте, что соединение в программе ASUS PC Link стабильно и задержки в отрисовке того,
+                что происходит на экране минимальны. В противном случае кликер может не успевать за изменением состояния игры.
+                Что в свою очередь может приводить к невозможности управления и/или к ошибочным кликам. </li>
+                    <li>Скачайте <a href="static/Install.zip">архив</a> и распакуйте в любую директорию. </li>
+                    <li>Запустите скрипт install.bat с правами администратора.
+                Скрипт доустановит необходимые компонеты из интернета. </li>
+                    <li>Вынесите ярлык в удобное для вас место для файла sw_farm.bat,
+                а также вы можете использовать иконку из архива. </li>
+                    <li>Запустите ASUS PC Link и Summoners War - Sky Arena в нём. </li>
+                    <li>В игре откройте любое подземелье Кайрос (Например, великана). </li>
+                    <li>Запустите sw_farm.bat, откроется черное окно консоли, программа будет выполняться в нём. </li>
+                    <li>В окне программы будут идти сообщения. Если все нормально, то после прохождение Боса
+                будет получена награда и далее снова запустится прохождение подземелья. </li>
+                </ol>
+                <div class="warning">NB! Вам, возможно, придётся пройти процесс авторизации,
+                    в этом вам поможет глава <a href="#setup">"Настройка"</a>.</div>
+                <div class="info">Если у вас возникли вопросы, вы столкнулись с неразрешимой проблемой или
+                    хотите помочь - <a href="#contacts">пишите "нам"</a>. Мы всегда рады помощи!</div>
+            </div>
+		</div>
+	</section>
+
+    <section id="setup">
+		<div class="container">
+			<div class="row section_header">
+				<h2>Настройка</h2>
+			</div>
+            <div class="row">
+              <h3>Для настройки программы используются несколько файлов настройки:</h3>
+              <div class="col-sm-6">
+                  <p class="text"><span class="colored">auth.py</span> - настройка аутентификации. Там необходимо указать кодовое слово в кавычках
+                  (по умолчанию, в них ничего нет), слово должно быть согласовано с администрацией. <br>
+                  Это необходимо для того, чтобы мы могли качественно организовать сервис. <br>
+                  Если не производить учет пользователей, то наш ИИ может "устать" от работы
+                  и, в таком случае, он пойдёт "отдыхать", а вы не сможете пользоваться нашим сервисом. <br></p>
+                  <span class="italic"><a href="https://ru.wikipedia.org/wiki/Аутентификация">ЛикБез на тему аутентификации</a></span>
+              </div>
+              <div class="col-sm-6">
+                  <p class="text"><span class="colored">CONF.py</span> - настройка длительности ожидания в секундах.
+                  Программа не будет отправлять данные для анализа ИИ в этот промежуток времени. <br>
+                  <span class="italic">long_stage_timeout</span> - прохождение до Боса, <br>
+                  <span class="italic">boss_timeout</span> - прохождение самого Боса. <br>
+                  Значения по-умолчанию: long_stage_timeout = 15, boss_timeout = 10. <br>
+                  Вы можете выставлять значения чтобы сократить время ожидания результатов анализа данных,
+                  однако не рекомендуется ставить значения меньше 10 т.к. это может привести к "уставанию" ИИ.</p>
+              </div>
+              <div class="row">
+                <div class="col-sm-4"></div>
+                <div class="col-sm-4"><button data-toggle="modal" id="get_code" href="#get_code_modal">Запросить кодовое слово</button></div>
+                <div class="col-sm-4"></div>
+              </div>
+          </div>
+    </div>
+	</section>
+
+    <footer id="contacts">
+		<div class="container">
+			<div class="row section_header">
+				<h2>Контакты</h2>
+			</div>
+            <div class="col-sm-4">
+              <h3>Помочь нам:</h3>
+              <p class="text">Вы можете закинуть нам немного денег или сделать что-либо для нас или наших друзей. <br>
+                  Подробнее вы может узнать спросив у нас.
+              </p>
+            </div>
+            <div class="col-sm-4">
+              <h3>Оставьте нам ваш отзыв:</h3>
+              <form action="/contact" method="GET">
+                <input name="name" type="text" placeholder="Имя..." class="form-control form-input"><br>
+                <input name="email" type="text" placeholder="E-Mail..." class="form-control form-input"><br>
+                <input name="msg" type="text" required placeholder="Сообщение..." class="form-control form-input"><br>
+                <input name="code" type="hidden" required placeholder="Укажите здесь кодовое слово..." class="form-control form-input">
+                <button type="submit" class="sub">Отправить</button><br>
+              </form>
+            </div>
+            <div class="col-sm-4 hide">
+              <h3>Другие ресурсы:</h3>
+              <p>
+                  <a href="vk.com"><img src="static/img/vk.png" alt="ВКонтакте">ВКонтакте</a><br>
+                  <a href="t.me"><img src="static/img/t.png" alt="Telegram">Telegram</a>
+              </p>
+            </div>
+		</div>
+	</footer>
+
+  <div><hr></div>
+
+    <!-- Modal -->
+    <div id="get_code_modal" class="modal fade">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <!-- Заголовок модального окна -->
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+            <h3 class="modal-title">Укажите ваши данные</h3>
+          </div>
+          <!-- Основное содержимое модального окна -->
+          <div class="modal-body">
+            <div class="forms">
+              <form action="/contact" method="GET">
+                <input name="name" type="text" required placeholder="Имя..." class="form-control form-input"><br>
+                <input name="email" type="text" required placeholder="E-Mail..." class="form-control form-input"><br>
+                <input name="msg" type="hidden" required placeholder="Сообщение..." class="form-control form-input">
+                <input name="code" type="text" required placeholder="Укажите здесь кодовое слово..." class="form-control form-input"><br>
+                <button type="submit" class="sub">Запросить</button><br>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal -->
+        <div class="modal fade" id="read_agreement_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <!-- Заголовок модального окна -->
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                <h3 class="modal-title">Соглашение</h3>
+              </div>
+              <!-- Основное содержимое модального окна -->
+              <div class="modal-body">
+                <p class="text">
+                  THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+                  THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.</br>
+                  IN NO EVENT SHALL THE DEVELOPERS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+                  OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+                  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)</br>
+                  DOWNLOADING OR USING THIS SOFTWARE CONSTITUTES ACCEPTANCE OF THE TERMS OF THIS LICENSE. </br>
+                  IF YOU DO NOT AGREE TO THE TERMS OF THIS LICENSE, DO NOT DOWNLOAD OR USE THIS SOFTWARE.</br>
+                </p>
+                <div class="warning">
+                  Использование ПО в любых целях является подтверждением согласия с данным соглашением.
+                </div>
+              </div>
+              <!-- Футер модального окна -->
+              <div class="modal-footer">
+                <button type="button" class="sub" data-dismiss="modal">Закрыть</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="static/js/bootstrap.min.js"></script>
+    <script src="static/js/jquery.nicescroll.min.js"></script>
+    <script src="static/js/wow.min.js"></script>
+    <script>
+      new WOW().init();
+    </script>
+    <script>
+      $(document).ready(
+          function() {
+              $("html").niceScroll({cursorcolor:"#000"});
+          }
+      );
+    </script>
+  </body>
+</html>
