@@ -1,49 +1,58 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from datetime import datetime
-import os
+from datetime import datetime, date
+import os, signal
 import requests
 import argparse
 import logging
 import time
 import pickle
-
+import configparser
 import shutil
 from PIL import Image
 from shutil import copyfile
 
-try:
-    print("***Чтение файла авторизации.***")
-    from auth import key
-    print("Успешно. Ваша кодовая фраза: '%s'" % key)
-except ImportError:
-    key = "unauthorized user"
-    f = open('auth.py', 'w')
-    f.write("key = '' \n")
-    f.close()
-    print("Сбой. Ваша кодовая фраза: '%s'" % key)
 
-try:
-    print("***Чтение файла конфигурации.***")
-    from CONF import long_stage_timeout, boss_timeout, update, sell_all_runes, window_title, window_x_coordinate, window_y_coordinate
-    print("Успешно. \n   long_stage_timeout = %d \n   boss_timeout = %d \n   update = %d \n   sell_all_runes = %d \n   window_title = %s \n   window_x_coordinate = %d \n   window_y_coordinate = %d" % (long_stage_timeout, boss_timeout, update, sell_all_runes, window_title, window_x_coordinate, window_y_coordinate))
-except ImportError:
-    long_stage_timeout = 15
-    boss_timeout = 10
-    update = 0
-    sell_all_runes = 0
-    window_title = 'sw_farm' 
-    window_x_coordinate = 0 
-    window_y_coordinate = 0
-    f = open('CONF.py', 'w')
-    file_content = "'''Файл конфигурации''' \n#Программа не будет отправлять данные для анализа ИИ в этот промежуток времени. \n#прохождение до Боса \nlong_stage_timeout = 15 \n#прохождение самого Боса \nboss_timeout = 10 \n \n#Обновлять приложение (1 - да, 0 - нет) \nupdate = 0 \n \n#Продажа всех рун (1 - продавать, 0 - не продавать) \nsell_all_runes = 0 \n \n# параметры окна \nwindow_title = 'sw_farm' \nwindow_x_coordinate = 0 \nwindow_y_coordinate = 0"
-    f.write(file_content)
-    f.close()
-    print("Сбой. \n   long_stage_timeout = %d \n   boss_timeout = %d \n   update = %d \n   sell_all_runes = %d \n   window_title = %s \n   window_x_coordinate = %d \n   window_y_coordinate = %d" % (long_stage_timeout, boss_timeout, update, sell_all_runes, window_title, window_x_coordinate, window_y_coordinate))
-    
+##########################################
+# LOGGER INFO
+##########################################
+# set up logging to file - see previous section for more details
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%m-%d %H:%M',
+                    filename='swhlp' + str(date.today()) + '.log',
+                    filemode='a')
+# define a Handler which writes INFO messages or higher to the sys.stderr
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+# set a format which is simpler for console use
+formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+# tell the handler to use this format
+console.setFormatter(formatter)
+# add the handler to the root logger
+logging.getLogger('').addHandler(console)
+# Now, define a couple of other loggers which might represent areas in application:
+logger = logging.getLogger(__name__)
+
+
+##########################################
+# CONFIGURATION DATA
+##########################################
+VER = 180
+key = ''
+long_stage_timeout = 15
+boss_timeout = 10
+update = 0
+sell_all_runes = 0
+window_title = 'sw_farm'
+window_x_coordinate = 0
+window_y_coordinate = 0
 view_only_mode = False
 
-VER = 177
+
+##########################################
+# CONNECTION INFO
+##########################################
 # URL_API = "http://192.168.169.145:30001/api/UploadFile4Recognition"
 # URL_SRV = "http://217.71.231.9:30001"
 URL_SRV = "http://192.168.169.145:30001"
@@ -51,6 +60,10 @@ URL_API = URL_SRV + "/api/UploadFile4Recognition"
 URL_UPD = URL_SRV + "/chkver"
 STAT_UPD = URL_SRV + "/stat"
 
+
+##########################################
+# LOCAL FILES AND TEMP DATA
+##########################################
 IMAGE_TYPE = "screenshot"
 IM_PATH = "screenshot.jpg"
 supportFlag = True
@@ -61,10 +74,6 @@ img_meta = []
 new_start_date = None
 new_start_flag = None
 
-logger = logging.getLogger('sw')
-ch = logging.StreamHandler()
-logger.addHandler(ch)
-logger.setLevel(logging.DEBUG)
 
 class Stat(object):
     def __init__(self, run_id, name, value):
@@ -78,6 +87,9 @@ def get_image_from_path(image_path):
     return im
 
 
+##########################################
+# UPLOAD IMAGE TO WEB-SERVER AND GET ANSWER
+##########################################
 def upload_to_web(im_path):
     global uaddr, uname
     files = {
@@ -101,6 +113,9 @@ def upload_to_web(im_path):
     return callback_id, message
 
 
+##########################################
+# CHECK IMAGE SIMILARITY
+##########################################
 def get_im_similarity_index(screenshot, previous_screenshot):
     result = 0
 
@@ -129,6 +144,9 @@ def get_im_similarity_index(screenshot, previous_screenshot):
     return result
 
 
+##########################################
+# DO ACTION IN GAME
+##########################################
 def do_mouse_click(com):
     os.system("PCLinkScr.exe")
     idx = get_im_similarity_index("screenshot.jpg", "previous_screenshot.jpg")
@@ -150,40 +168,62 @@ def calc_and_write_stat(run_id):
             _value = stat_data.value
 
             _now = datetime.now()
-            print(_value, _now, run_id, (_now - run_id).seconds, new_value)
+            logstr = "дата из файла = [%s], сейчас = [%s], дата начала = [%s], новая дельта (время выполнения) в секундах = [%s], предыдущая дельта в секундах = [%s]" % (_value, _now, run_id, (_now - run_id).seconds, new_value)
+            logger.debug(logstr)
             new_value = (_value + (datetime.now() - run_id).seconds) / 2
+            logstr = "стабилизация времени выполнения - вероятно в следствии ошибки выполнения. Время выполнения (дельта) = "
+            if new_value > 600:
+                new_value = 600
+                logger.debug(logstr + "[%s] приведено к [%s]" % (new_value, "600"))
+            if new_value < 20:
+                new_value = 20
+                logger.debug(logstr + "[%s] приведено к [%s]" % (new_value, "20"))
 
             with open('stat.pkl', 'wb') as output:
                 stat = Stat(run_id, 'start-boss', new_value)
                 pickle.dump(stat, output, pickle.HIGHEST_PROTOCOL)
-            print("stat %s --> %s" % (_value, new_value))
+            logger.debug("stat %s --> %s" % (_value, new_value))
 
     except IOError:
         with open('stat.pkl', 'wb') as output:
             stat = Stat(run_id, 'start-boss', new_value)
             pickle.dump(stat, output, pickle.HIGHEST_PROTOCOL)
-        print("stat init %s" % new_value)
+        logstr = ("stat init %s" % new_value)
+        logger.error(logstr, exc_info=True)
 
     return int(new_value)
 
 
+##########################################
+# PRINT WAITING TIME TO CONSOLE IN ONE STRING
+##########################################
 def print_waiting(step):
-    print("\r***ОЖИДАНИЕ " + str(step) + " СЕКУНД***", end="")
+    if(step > 0):
+        print("\r***ОЖИДАНИЕ " + str(step) + " СЕКУНД***                   ", end="")
+    elif(step == 0):
+        print("\r***ПОЛУЧЕНИЕ И ОБРАБОТКА ИНФОРМАЦИИ***", end="")
+        logger.debug("***ПОЛУЧЕНИЕ И ОБРАБОТКА ИНФОРМАЦИИ***")
+    else:
+        logger.warning("print_waiting step < 0 ")
 
 
+##########################################
+# MAIN FUNCTION
+##########################################
 def run():
     global supportFlag, long_stage_timeout, new_start_date, new_start_flag
     try:
         os.remove("screenshot.jpg")
     except IOError:
-        logger.debug('err: old scr not found')
+        logger.error('err: old scr not found', exc_info=True)
+        pass
     datetime_before_scrshot = datetime.now()
     os.system("PCLinkScr.exe")
     last_modify_date = datetime.fromtimestamp(os.path.getatime("screenshot.jpg"))
     while last_modify_date < datetime_before_scrshot:
         last_modify_date = datetime.fromtimestamp(os.path.getatime("screenshot.jpg"))
         time.sleep(0.5)
-        print(last_modify_date, datetime_before_scrshot)
+        logger.debug(last_modify_date, datetime_before_scrshot)
 
     copyfile("screenshot.jpg", "previous_screenshot.jpg")
 
@@ -195,7 +235,7 @@ def run():
     try:
         file = open(IM_PATH)
     except IOError:
-        logger.debug(u'Image not found at path: ', IM_PATH)
+        logger.error(('Image not found at path: ', IM_PATH), exc_info=True)
     else:
         with file:
                 logger.debug('***ОТПРАВКА ИЗОБРАЖЕНИЯ НА СЕРВЕР***')
@@ -219,13 +259,13 @@ def run():
         new_start_flag = None
         os.system("PCLinkClk.exe 0 0 85 70")
     elif (result == "02boot") | (result == "03st"):
-        print(long_stage_timeout, new_start_date, new_start_flag)
+        logger.debug("long_stage_timeout = %s, new_start_date = %s, new_start_flag = %s" % (long_stage_timeout, new_start_date, new_start_flag))
         if not new_start_flag:
             if long_stage_timeout > 30 :
                 long_stage_timeout -= 30
             logger.debug("***ОЖИДАНИЕ %d СЕКУНД***" % long_stage_timeout)
             if long_stage_timeout > 120:
-                i = long_stage_timeout / 2
+                i = int(long_stage_timeout / 2)
                 if new_start_flag == 10:
                     new_start_flag = 1
                 else:
@@ -234,28 +274,28 @@ def run():
             else:
                 i = long_stage_timeout
                 new_start_flag = 1
-            while i > 0:
+            while i >= 0:
                 print_waiting(i)
                 time.sleep(1)
                 i -= 1
-            print("\n")
+            # print("\n")
         else:
             logger.debug("***ПОВТОРНЫЙ ЗАПРОС - ОЖИДАНИЕ %d СЕКУНД***" % 10)
             i = 10
-            while i > 0:
+            while i >= 0:
                 print_waiting(i)
                 time.sleep(1)
                 i -= 1
-            print("\n")
+            # print("\n")
         pass
     elif result == "07boss1":
         logger.debug("***ОЖИДАНИЕ %d СЕКУНД***" % boss_timeout)
         i = boss_timeout
-        while i > 0:
+        while i >= 0:
             print_waiting(i)
             time.sleep(1)
             i -= 1
-        print("\n")
+        # print("\n")
         pass
     elif result == "11victory1":
         long_stage_timeout = calc_and_write_stat(new_start_date)
@@ -336,19 +376,145 @@ def check_new_version():
     if version:
         if (int(version) > VER):
             if update != 1:
-                print("Обнаружена новая версия = %s. Текущая версия = %s. Update is off. \nYou can switch on update in 'CONF.py'." % (version, VER))
+                logger.info("Обнаружена новая версия = %s. Текущая версия = %s. Update is off. \nYou can switch on update in 'CONF.py'." % (version, VER))
             else:
-                print("Обнаружена новая версия = %s. Текущая версия = %s. Обновление через 5 сек..." % (version, VER))
+                logger.info("Обнаружена новая версия = %s. Текущая версия = %s. Обновление через 5 сек..." % (version, VER))
                 script_update(URL_SRV + "/static/" + version)
         else:
-            print("У вас последняя версия.")
+            logger.info("У вас последняя версия = %s." % VER)
 
 
+##########################################
+# (RE)WRITE CONFIGURATION FILE
+##########################################
+def write_config(conf):
+    conf.clear()
 
+    conf.add_section('main')
+    conf.set('main', '# Файл конфигурации программы SUMMONERS WAR HELPER')
+    conf.set('main', '# Версия программы')
+    conf.set('main', 'version', VER)
+    conf.set('main', '# Обновлять приложение (1 - да, 0 - нет)')
+    conf.set('main', 'update', update)
+    conf.set('main', '# Параметры окна, необходимо для перемещения')
+    conf.set('main', '# Название окна программы, если перемещение не требуется - сделайте пустым или несуществующим')
+    conf.set('main', 'window_title', window_title)
+    conf.set('main', '# Координата по оси X, куда будет перемещаться окно')
+    conf.set('main', 'window_x_coordinate', window_x_coordinate)
+    conf.set('main', '# Координата по оси Y, куда будет перемещаться окно')
+    conf.set('main', 'window_y_coordinate', window_y_coordinate)
+    conf.set('main', '# Конец секции main')
+
+    conf.add_section('gameplay')
+    conf.set('gameplay', '# Программа не будет отправлять данные для анализа ИИ в этот промежуток времени.')
+    conf.set('gameplay', '# Таймаут обновления во время от запуска до боса')
+    conf.set('gameplay', 'long_stage_timeout', long_stage_timeout)
+    conf.set('gameplay', '# Таймаут обновления во время убийства боса')
+    conf.set('gameplay', 'boss_timeout', boss_timeout)
+    conf.set('gameplay', '# Продажа всех выбитых рун (1 - продавать, 0 - не продавать)')
+    conf.set('gameplay', 'sell_all_runes', sell_all_runes)
+    conf.set('gameplay', '# Режим только просмотра, программа только отправляет данные на сервер, но не вмешивается в ироцесс')
+    conf.set('gameplay', 'view_only_mode', view_only_mode)
+    conf.set('gameplay', '# Конец секции gameplay')
+
+    conf.add_section('authentication')
+    conf.set('authentication', '# Ваша кодовая фраза')
+    conf.set('authentication', 'key', key)
+    conf.set('authentication', '# Конец секции authentication')
+
+    with open('swhlp.conf', 'w') as configfile:
+        conf.write(configfile)
+
+
+##########################################
+# READ AND CHECK CONFIGURATION FILE
+##########################################
+def read_config():
+    global VER, key, update, window_title, window_x_coordinate, window_y_coordinate, long_stage_timeout, boss_timeout, sell_all_runes, view_only_mode
+
+    try:
+        logger.info('Reading configuration in swhelp.conf')
+        conf = configparser.RawConfigParser(allow_no_value=True)
+        conf.read('swhlp.conf')
+        if conf.has_option('main', 'version'):
+            VER = conf.getint('main', 'version')
+        if conf.has_option('authentication', 'key'):
+            key = conf.get('authentication', 'key')
+        if conf.has_option('main', 'update'):
+            update = conf.getint('main', 'update')
+        if conf.has_option('main', 'window_title'):
+            window_title = conf.get('main', 'window_title')
+        if conf.has_option('main', 'window_x_coordinate'):
+            window_x_coordinate = conf.getint('main', 'window_x_coordinate')
+        if conf.has_option('main', 'window_y_coordinate'):
+            window_y_coordinate = conf.getint('main', 'window_y_coordinate')
+        if conf.has_option('gameplay', 'long_stage_timeout'):
+            long_stage_timeout = conf.getint('gameplay', 'long_stage_timeout')
+        if conf.has_option('gameplay', 'boss_timeout'):
+            boss_timeout = conf.getint('gameplay', 'boss_timeout')
+        if conf.has_option('gameplay', 'sell_all_runes'):
+            sell_all_runes = conf.getint('gameplay', 'sell_all_runes')
+        if conf.has_option('gameplay', 'view_only_mode'):
+            view_only_mode = conf.getboolean('gameplay', 'view_only_mode')
+
+        write_config(conf)
+
+        logger.info('Версия: [%s]' % VER)
+        logger.info('Ваша кодовая фраза: [%s]' % key)
+        logger.info('Обновлять приложение: [%s]' % ('ДА' if update else 'НЕТ'))
+        logger.info('Название окна программы: [%s]' % window_title)
+        logger.info('Координата по оси X: [%s]' % window_x_coordinate)
+        logger.info('Координата по оси Y: [%s]' % window_y_coordinate)
+        logger.info('Таймаут обновления во время от запуска до боса: [%s]' % long_stage_timeout)
+        logger.info('Таймаут обновления во время убийства боса: [%s]' % boss_timeout)
+        logger.info('Продажа всех выбитых рун: [%s]' % ('ДА' if sell_all_runes else 'НЕТ'))
+        logger.info('Режим "только просмотр": [%s]' % ('ДА' if view_only_mode else 'НЕТ'))
+
+        return True
+
+    except Exception:
+        logger.error('Failed read config swhlp.conf, reconfiguration...', exc_info=True)
+        write_config(conf)
+        logger.info('Reconfiguration complete')
+        return False
+
+
+##########################################
+# KILL ALL RUNNING UTILITIES
+##########################################
+def clearing():
+    logger.debug('Уборка мусора')
+    os.system('taskkill /IM PCLinkScr.exe /F')
+    os.system('taskkill /IM PCLinkClk.exe /F')
+    os.system('taskkill /IM wndmove.exe /F')
+
+
+##########################################
+# IF PROGRAM CLOSING - ***NOT WORKS***
+##########################################
+def on_stop(*args):
+    logger.debug('Распознано закрытие окна.')
+    clearing()
+    logger.debug('Завершение работы.')
+    os.exit(0)
+for sig in (signal.SIGBREAK, signal.SIGINT, signal.SIGTERM):
+    signal.signal(sig, on_stop)
+
+
+##########################################
+# MAIN FUNCTION
+##########################################
 if __name__ == "__main__":
-    
-    logger.debug("***ПЕРЕМЕЩЕНИЕ ОКНА***")
-    os.system("wndmove.exe %s %d %d" % (window_title, window_x_coordinate, window_y_coordinate))
+    logger.debug("\n\n\n")
+    logger.debug("***ЗАПУСК ПРОГРАММЫ В [%s]***" % datetime.today())
+    clearing()
+    # Очистка окна от данных этапа подготовки
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+    # Чтение файла конфигурации
+    logger.debug("***ЧТЕНИЕ ФАЙЛА КОНФИГУРАЦИИ***")
+    while(not read_config()):
+        read_config()
     
     # global addr, user
     logger.debug("***АНАЛИЗ ПАРАМЕТРОВ ЗАПУСКА***")
@@ -363,14 +529,24 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+
+    logger.debug("***ПЕРЕМЕЩЕНИЕ ОКНА***")
+    os.system("wndmove.exe %s %d %d" % (window_title, window_x_coordinate, window_y_coordinate))
+
+    logger.info('')
     try:
         uaddr = requests.get('https://api.ipify.org').text
+        logger.info('Ваш адрес = [%s]' % uaddr)
     except Exception as e:
-        print(e)
+        logger.error('Failed to get IP info from ipify.org', exc_info=True)
     uname = key
+    logger.info('Ваше имя = [%s]' % uname)
 
+    logger.info('')
     check_new_version()
 
+    logger.info('')
+    logger.info('***НАЧАЛО РАБОТЫ ПРОГРАММЫ***\n')
 
     while True:
         startdate = datetime.now()
