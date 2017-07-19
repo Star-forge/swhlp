@@ -19,7 +19,7 @@ from shutil import copyfile
 # set up logging to file - see previous section for more details
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m-%d %H:%M',
+                    datefmt='%m-%d %H:%M:%S',
                     filename='swhlp' + str(date.today()) + '.log',
                     filemode='a')
 # define a Handler which writes INFO messages or higher to the sys.stderr
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 ##########################################
 # CONFIGURATION DATA
 ##########################################
-VER = 180
+VER = 181
 key = ''
 long_stage_timeout = 15
 boss_timeout = 10
@@ -48,6 +48,128 @@ window_title = 'sw_farm'
 window_x_coordinate = 0
 window_y_coordinate = 0
 view_only_mode = False
+buy_energy_and_go = True
+sleep_timeout_without_energy = 120
+
+
+##########################################
+# (RE)WRITE CONFIGURATION FILE
+##########################################
+def write_config(conf):
+    conf.clear()
+
+    conf.add_section('main')
+    conf.set('main', '# Файл конфигурации программы SUMMONERS WAR HELPER')
+    conf.set('main', '')
+    conf.set('main', '# Версия программы')
+    conf.set('main', 'version', VER)
+    conf.set('main', ' ')
+    conf.set('main', '# Обновлять приложение (1 - да, 0 - нет)')
+    conf.set('main', 'update', update)
+    conf.set('main', '  ')
+    conf.set('main', '# Параметры окна, необходимо для перемещения')
+    conf.set('main', '# Название окна программы, если перемещение не требуется - сделайте пустым или несуществующим')
+    conf.set('main', 'window_title', window_title)
+    conf.set('main', '   ')
+    conf.set('main', '# Координата по оси X, куда будет перемещаться окно')
+    conf.set('main', 'window_x_coordinate', window_x_coordinate)
+    conf.set('main', '    ')
+    conf.set('main', '# Координата по оси Y, куда будет перемещаться окно')
+    conf.set('main', 'window_y_coordinate', window_y_coordinate)
+    conf.set('main', '# Конец секции main')
+
+    conf.add_section('gameplay')
+    conf.set('gameplay', '# Программа не будет отправлять данные для анализа ИИ в этот промежуток времени.')
+    conf.set('gameplay', '# Таймаут обновления во время от запуска до боса')
+    conf.set('gameplay', 'long_stage_timeout', long_stage_timeout)
+    conf.set('gameplay', '')
+    conf.set('gameplay', '# Таймаут обновления во время убийства боса')
+    conf.set('gameplay', 'boss_timeout', boss_timeout)
+    conf.set('gameplay', ' ')
+    conf.set('gameplay', '# Продажа всех выбитых рун (1 - продавать, 0 - не продавать)')
+    conf.set('gameplay', 'sell_all_runes', sell_all_runes)
+    conf.set('gameplay', '  ')
+    conf.set('gameplay', '# Режим только просмотра, программа только отправляет данные на сервер, но не вмешивается в процесс')
+    conf.set('gameplay', 'view_only_mode', view_only_mode)
+    conf.set('gameplay', '   ')
+    conf.set('gameplay', '# Покупать энергию за кристаллы и продолжать.')
+    conf.set('gameplay', 'buy_energy_and_go', buy_energy_and_go)
+    conf.set('gameplay', '    ')
+    conf.set('gameplay', '# Таймаут ожиидания, после которого будет предпринята попытка продолжить прохождение.')
+    conf.set('gameplay', '# Используется при buy_energy_and_go = False - когда энергия не покупается. ')
+    conf.set('gameplay', '# Таймаут исчисляется в минутах, Если вам нужно 2 часа, то необходимо указать: sleep_timeout_without_energy = 120')
+    conf.set('gameplay', 'sleep_timeout_without_energy', sleep_timeout_without_energy)
+    conf.set('gameplay', '# Конец секции gameplay')
+
+    conf.add_section('authentication')
+    conf.set('authentication', '# Ваша кодовая фраза')
+    conf.set('authentication', 'key', key)
+    conf.set('authentication', '# Конец секции authentication')
+
+    with open('swhlp.conf', 'w') as configfile:
+        conf.write(configfile)
+
+
+##########################################
+# READ AND CHECK CONFIGURATION FILE
+##########################################
+def read_config():
+    global VER, key, update, window_title, window_x_coordinate, window_y_coordinate
+    global long_stage_timeout, boss_timeout, sell_all_runes, view_only_mode, buy_energy_and_go, sleep_timeout_without_energy
+
+    try:
+        logger.info('Reading configuration in swhelp.conf')
+        conf = configparser.RawConfigParser(allow_no_value=True)
+        conf.read('swhlp.conf')
+        if conf.has_option('main', 'version'):
+            VER = conf.getint('main', 'version')
+        if conf.has_option('authentication', 'key'):
+            key = conf.get('authentication', 'key')
+        if conf.has_option('main', 'update'):
+            update = conf.getint('main', 'update')
+        if conf.has_option('main', 'window_title'):
+            window_title = conf.get('main', 'window_title')
+        if conf.has_option('main', 'window_x_coordinate'):
+            window_x_coordinate = conf.getint('main', 'window_x_coordinate')
+        if conf.has_option('main', 'window_y_coordinate'):
+            window_y_coordinate = conf.getint('main', 'window_y_coordinate')
+        if conf.has_option('gameplay', 'long_stage_timeout'):
+            long_stage_timeout = conf.getint('gameplay', 'long_stage_timeout')
+        if conf.has_option('gameplay', 'boss_timeout'):
+            boss_timeout = conf.getint('gameplay', 'boss_timeout')
+        if conf.has_option('gameplay', 'sell_all_runes'):
+            sell_all_runes = conf.getint('gameplay', 'sell_all_runes')
+        if conf.has_option('gameplay', 'view_only_mode'):
+            view_only_mode = conf.getboolean('gameplay', 'view_only_mode')
+        if conf.has_option('gameplay', 'buy_energy_and_go'):
+            buy_energy_and_go = conf.getboolean('gameplay', 'buy_energy_and_go')
+        if conf.has_option('gameplay', 'sleep_timeout_without_energy'):
+            sleep_timeout_without_energy = conf.getint('gameplay', 'sleep_timeout_without_energy')
+
+
+        write_config(conf)
+
+        logger.info('Версия: [%s]' % VER)
+        logger.info('Ваша кодовая фраза: [%s]' % key)
+        logger.info('Обновлять приложение: [%s]' % ('ДА' if update else 'НЕТ'))
+        logger.info('Название окна программы: [%s]' % window_title)
+        logger.info('Координата по оси X: [%s]' % window_x_coordinate)
+        logger.info('Координата по оси Y: [%s]' % window_y_coordinate)
+        logger.info('Таймаут обновления во время от запуска до боса: [%sсек]' % long_stage_timeout)
+        logger.info('Таймаут обновления во время убийства боса: [%sсек]' % boss_timeout)
+        logger.info('Продажа всех выбитых рун: [%s]' % ('ДА' if sell_all_runes else 'НЕТ'))
+        logger.info('Режим "только просмотр": [%s]' % ('ДА' if view_only_mode else 'НЕТ'))
+        logger.info('Покупать энергию за кристаллы и продолжать": [%s]' % ('ДА' if buy_energy_and_go else 'НЕТ'))
+        logger.info('Таймаут ожидания пока не накопится энергия: [%sмин]' % sleep_timeout_without_energy)
+
+        return True
+
+    except Exception:
+        logger.error('Failed read config swhlp.conf, reconfiguration...', exc_info=True)
+        write_config(conf)
+        logger.info('Reconfiguration complete')
+        return False
+
 
 
 ##########################################
@@ -197,12 +319,14 @@ def calc_and_write_stat(run_id):
 ##########################################
 # PRINT WAITING TIME TO CONSOLE IN ONE STRING
 ##########################################
-def print_waiting(step):
+def print_waiting(text, step):
     if(step > 0):
-        print("\r***ОЖИДАНИЕ " + str(step) + " СЕКУНД***                   ", end="")
+        text = ("\r"+text+"                      ") % step
+        # logger.debug(text)
+        print(text, end="")
     elif(step == 0):
-        print("\r***ПОЛУЧЕНИЕ И ОБРАБОТКА ИНФОРМАЦИИ***", end="")
-        logger.debug("***ПОЛУЧЕНИЕ И ОБРАБОТКА ИНФОРМАЦИИ***")
+        print("\r***ПОЛУЧЕНИЕ И ОБРАБОТКА ИНФОРМАЦИИ***             ", end="")
+        logger.debug("***ПОЛУЧЕНИЕ И ОБРАБОТКА ИНФОРМАЦИИ***             ")
     else:
         logger.warning("print_waiting step < 0 ")
 
@@ -211,7 +335,7 @@ def print_waiting(step):
 # MAIN FUNCTION
 ##########################################
 def run():
-    global supportFlag, long_stage_timeout, new_start_date, new_start_flag
+    global supportFlag, long_stage_timeout, new_start_date, new_start_flag, sleep_timeout_without_energy
     try:
         os.remove("screenshot.jpg")
     except IOError:
@@ -274,25 +398,28 @@ def run():
             else:
                 i = long_stage_timeout
                 new_start_flag = 1
+            text = "***ОЖИДАНИЕ %d СЕКУНД***"
             while i >= 0:
-                print_waiting(i)
+                print_waiting(text, i)
                 time.sleep(1)
                 i -= 1
             # print("\n")
         else:
-            logger.debug("***ПОВТОРНЫЙ ЗАПРОС - ОЖИДАНИЕ %d СЕКУНД***" % 10)
+            text = "***ПОВТОРНЫЙ ЗАПРОС - ОЖИДАНИЕ %d СЕКУНД***"
+            logger.debug(text % 10)
             i = 10
             while i >= 0:
-                print_waiting(i)
+                print_waiting(text, i)
                 time.sleep(1)
                 i -= 1
             # print("\n")
         pass
     elif result == "07boss1":
-        logger.debug("***ОЖИДАНИЕ %d СЕКУНД***" % boss_timeout)
+        text = "***ОЖИДАНИЕ %d СЕКУНД***"
+        logger.debug(text % boss_timeout)
         i = boss_timeout
         while i >= 0:
-            print_waiting(i)
+            print_waiting(text, i)
             time.sleep(1)
             i -= 1
         # print("\n")
@@ -328,8 +455,19 @@ def run():
         if not do_mouse_click("PCLinkClk.exe 0 0 37 60"):
             return callback_id
     elif (result == "16no energy") | (result == "18buy energy"):
-        if not do_mouse_click("PCLinkClk.exe 0 0 40 60"):
-            return callback_id
+        if buy_energy_and_go:
+            if not do_mouse_click("PCLinkClk.exe 0 0 40 60"):
+                return callback_id
+        else:
+            if not do_mouse_click("PCLinkClk.exe 0 0 60 60"):
+                return callback_id
+            i = sleep_timeout_without_energy*60
+            text = "***ЭНЕРГИЯ ЗАКОНЧИЛАСЬ - ОЖИДАНИЕ %d СЕКУНД***"
+            logger.debug(text % i )
+            while i >= 0:
+                print_waiting(text, i)
+                time.sleep(1)
+                i -= 1
     elif result == "17click energy":
         if supportFlag:
             pass
@@ -382,101 +520,6 @@ def check_new_version():
                 script_update(URL_SRV + "/static/" + version)
         else:
             logger.info("У вас последняя версия = %s." % VER)
-
-
-##########################################
-# (RE)WRITE CONFIGURATION FILE
-##########################################
-def write_config(conf):
-    conf.clear()
-
-    conf.add_section('main')
-    conf.set('main', '# Файл конфигурации программы SUMMONERS WAR HELPER')
-    conf.set('main', '# Версия программы')
-    conf.set('main', 'version', VER)
-    conf.set('main', '# Обновлять приложение (1 - да, 0 - нет)')
-    conf.set('main', 'update', update)
-    conf.set('main', '# Параметры окна, необходимо для перемещения')
-    conf.set('main', '# Название окна программы, если перемещение не требуется - сделайте пустым или несуществующим')
-    conf.set('main', 'window_title', window_title)
-    conf.set('main', '# Координата по оси X, куда будет перемещаться окно')
-    conf.set('main', 'window_x_coordinate', window_x_coordinate)
-    conf.set('main', '# Координата по оси Y, куда будет перемещаться окно')
-    conf.set('main', 'window_y_coordinate', window_y_coordinate)
-    conf.set('main', '# Конец секции main')
-
-    conf.add_section('gameplay')
-    conf.set('gameplay', '# Программа не будет отправлять данные для анализа ИИ в этот промежуток времени.')
-    conf.set('gameplay', '# Таймаут обновления во время от запуска до боса')
-    conf.set('gameplay', 'long_stage_timeout', long_stage_timeout)
-    conf.set('gameplay', '# Таймаут обновления во время убийства боса')
-    conf.set('gameplay', 'boss_timeout', boss_timeout)
-    conf.set('gameplay', '# Продажа всех выбитых рун (1 - продавать, 0 - не продавать)')
-    conf.set('gameplay', 'sell_all_runes', sell_all_runes)
-    conf.set('gameplay', '# Режим только просмотра, программа только отправляет данные на сервер, но не вмешивается в ироцесс')
-    conf.set('gameplay', 'view_only_mode', view_only_mode)
-    conf.set('gameplay', '# Конец секции gameplay')
-
-    conf.add_section('authentication')
-    conf.set('authentication', '# Ваша кодовая фраза')
-    conf.set('authentication', 'key', key)
-    conf.set('authentication', '# Конец секции authentication')
-
-    with open('swhlp.conf', 'w') as configfile:
-        conf.write(configfile)
-
-
-##########################################
-# READ AND CHECK CONFIGURATION FILE
-##########################################
-def read_config():
-    global VER, key, update, window_title, window_x_coordinate, window_y_coordinate, long_stage_timeout, boss_timeout, sell_all_runes, view_only_mode
-
-    try:
-        logger.info('Reading configuration in swhelp.conf')
-        conf = configparser.RawConfigParser(allow_no_value=True)
-        conf.read('swhlp.conf')
-        if conf.has_option('main', 'version'):
-            VER = conf.getint('main', 'version')
-        if conf.has_option('authentication', 'key'):
-            key = conf.get('authentication', 'key')
-        if conf.has_option('main', 'update'):
-            update = conf.getint('main', 'update')
-        if conf.has_option('main', 'window_title'):
-            window_title = conf.get('main', 'window_title')
-        if conf.has_option('main', 'window_x_coordinate'):
-            window_x_coordinate = conf.getint('main', 'window_x_coordinate')
-        if conf.has_option('main', 'window_y_coordinate'):
-            window_y_coordinate = conf.getint('main', 'window_y_coordinate')
-        if conf.has_option('gameplay', 'long_stage_timeout'):
-            long_stage_timeout = conf.getint('gameplay', 'long_stage_timeout')
-        if conf.has_option('gameplay', 'boss_timeout'):
-            boss_timeout = conf.getint('gameplay', 'boss_timeout')
-        if conf.has_option('gameplay', 'sell_all_runes'):
-            sell_all_runes = conf.getint('gameplay', 'sell_all_runes')
-        if conf.has_option('gameplay', 'view_only_mode'):
-            view_only_mode = conf.getboolean('gameplay', 'view_only_mode')
-
-        write_config(conf)
-
-        logger.info('Версия: [%s]' % VER)
-        logger.info('Ваша кодовая фраза: [%s]' % key)
-        logger.info('Обновлять приложение: [%s]' % ('ДА' if update else 'НЕТ'))
-        logger.info('Название окна программы: [%s]' % window_title)
-        logger.info('Координата по оси X: [%s]' % window_x_coordinate)
-        logger.info('Координата по оси Y: [%s]' % window_y_coordinate)
-        logger.info('Таймаут обновления во время от запуска до боса: [%s]' % long_stage_timeout)
-        logger.info('Таймаут обновления во время убийства боса: [%s]' % boss_timeout)
-        logger.info('Продажа всех выбитых рун: [%s]' % ('ДА' if sell_all_runes else 'НЕТ'))
-        logger.info('Режим "только просмотр": [%s]' % ('ДА' if view_only_mode else 'НЕТ'))
-
-        return True
-
-    except Exception:
-        logger.error('Failed read config swhlp.conf, reconfiguration...', exc_info=True)
-        write_config(conf)
-        logger.info('Reconfiguration complete')
-        return False
 
 
 ##########################################
@@ -556,6 +599,7 @@ if __name__ == "__main__":
 
         enddate = datetime.now()
         data = {
+            'user_name': uname,
             'client_startdate': startdate,
             'client_enddate': enddate,
             'client_version': VER,
