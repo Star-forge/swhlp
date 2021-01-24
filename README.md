@@ -1,7 +1,7 @@
 # swhlp  
 summoners war helper based on neural network  
   
-site: http://217.71.231.9:30001/
+site: http://your-site:30001/
   
 Порядок установки:  
   
